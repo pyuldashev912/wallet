@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/pyuldashev912/wallet/pkr/types"
+	"github.com/pyuldashev912/wallet/pkg/types"
 )
 
 func TestService_FindAccountById_positive(t *testing.T) {

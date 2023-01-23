@@ -3,7 +3,7 @@ package wallet
 import (
 	"errors"
 
-	"github.com/pyuldashev912/wallet/pkr/types"
+	"github.com/pyuldashev912/wallet/pkg/types"
 )
 
 var (
