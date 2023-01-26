@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/pyuldashev912/wallet/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -240,6 +241,47 @@ func TestService_Pay(t *testing.T) {
 				assert.NoError(t, err)
 			} else {
 				assert.EqualError(t, err, tc.expectedError.Error())
+			}
+		})
+	}
+}
+
+func TestService_Repeat(t *testing.T) {
+	svc := Service{
+		accounts: []*types.Account{
+			{
+				ID:      1,
+				Phone:   "+992000000001",
+				Balance: 125478,
+			},
+		},
+		payments: []*types.Payment{
+			{
+				ID:        uuid.New().String(),
+				AccountID: 1,
+				Amount:    2254,
+				Category:  "Home",
+				Status:    types.StatusInProgress,
+			},
+		},
+	}
+
+	testCases := []struct {
+		name           string
+		amount         types.Money
+		paymentsLenght int
+	}{
+		{
+			name:           "Succes",
+			paymentsLenght: 2,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			svc.Repeat(svc.payments[0].ID)
+			if tc.paymentsLenght != len(svc.payments) {
+				t.Fail()
 			}
 		})
 	}
