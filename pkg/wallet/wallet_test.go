@@ -324,3 +324,32 @@ func TestService_FavoritePayment(t *testing.T) {
 		})
 	}
 }
+func TestService_PayFromFavorite(t *testing.T) {
+	s := Service{
+		accounts: []*types.Account{
+			{ID: 1, Phone: "+992000000001", Balance: 4891514},
+		},
+		payments: []*types.Payment{
+			{ID: "1", AccountID: 1, Amount: 47575, Category: "Home", Status: types.StatusInProgress},
+			{ID: "1", AccountID: 1, Amount: 25475, Category: "Drugstore", Status: types.StatusInProgress},
+		},
+	}
+
+	testCases := []struct {
+		name string
+	}{
+		{
+			name: "success",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			s.FavoritePayment("1", "somename")
+			_, err := s.PayFromFavorite(s.favorites[0].ID)
+			if err != nil {
+				t.Fail()
+			}
+		})
+	}
+}

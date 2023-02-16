@@ -13,6 +13,7 @@ var (
 	ErrNotEnoughBalance     = errors.New("not enough balance")
 	ErrAccountNotFound      = errors.New("account not found")
 	ErrPaymentNotFound      = errors.New("payment not found")
+	ErrFavoriteNotFound     = errors.New("favorite payment not found")
 )
 
 type Service struct {
@@ -159,7 +160,7 @@ func (s *Service) FavoritePayment(paymentID string, name string) (*types.Favorit
 	}
 
 	favorite := &types.Favorite{
-		ID:        targetPayment.ID,
+		ID:        uuid.New().String(),
 		AccountId: targetPayment.AccountID,
 		Name:      name,
 		Amount:    targetPayment.Amount,
@@ -171,3 +172,29 @@ func (s *Service) FavoritePayment(paymentID string, name string) (*types.Favorit
 	return favorite, nil
 }
 
+func (s *Service) findPaymentFavorite(favoriteID string) (*types.Favorite, error) {
+	for _, favorite := range s.favorites {
+		if favorite.ID == favoriteID {
+			return favorite, nil
+		}
+	}
+
+	return nil, ErrFavoriteNotFound
+}
+
+// PayFromFavorite
+func (s *Service) PayFromFavorite(favoriteID string) (*types.Payment, error) {
+	favPayment, err := s.findPaymentFavorite(favoriteID)
+	if err != nil {
+		return nil, err
+	}
+
+	payment, err := s.Pay(
+		favPayment.AccountId, favPayment.Amount, favPayment.Category,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return payment, nil
+}
