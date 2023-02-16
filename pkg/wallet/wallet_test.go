@@ -286,3 +286,41 @@ func TestService_Repeat(t *testing.T) {
 		})
 	}
 }
+
+func TestService_FavoritePayment(t *testing.T) {
+	s := Service{
+		// accounts: []*types.Account{
+		// 	{ID: 1, Phone: "+992927777777", Balance: 1549},
+		// 	{ID: 2, Phone: "+992550149898", Balance: 11549},
+		// 	{ID: 3, Phone: "+992929608008", Balance: 91514},
+		// },
+		payments: []*types.Payment{
+			{ID: "1", AccountID: 1, Amount: 47575, Category: "Home", Status: types.StatusInProgress},
+			{ID: "2", AccountID: 2, Amount: 25475, Category: "Drugstore", Status: types.StatusInProgress},
+			{ID: "3", AccountID: 3, Amount: 6855, Category: "Coffee", Status: types.StatusInProgress},
+		},
+	}
+
+	testCases := []struct {
+		name           string
+		paymentId      string
+		paymentName    string
+		favoriteLength int
+	}{
+		{
+			name:           "success",
+			paymentId:      "1",
+			paymentName:    "For Home",
+			favoriteLength: 1,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			s.FavoritePayment(tc.paymentId, tc.paymentName)
+			if len(s.favorites) != tc.favoriteLength {
+				t.Fail()
+			}
+		})
+	}
+}

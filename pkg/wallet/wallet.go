@@ -19,6 +19,7 @@ type Service struct {
 	nextAccountID int64
 	accounts      []*types.Account
 	payments      []*types.Payment
+	favorites     []*types.Favorite
 }
 
 // RegisterAccount возвращает зарегистрированный аккаунт
@@ -149,3 +150,24 @@ func (s *Service) Repeat(paymentID string) (*types.Payment, error) {
 
 	return result, nil
 }
+
+// FavoritePayment создает избранный платеж из ранее сделанного платежа
+func (s *Service) FavoritePayment(paymentID string, name string) (*types.Favorite, error) {
+	targetPayment, err := s.FindPaymentById(paymentID)
+	if err != nil {
+		return nil, err
+	}
+
+	favorite := &types.Favorite{
+		ID:        targetPayment.ID,
+		AccountId: targetPayment.AccountID,
+		Name:      name,
+		Amount:    targetPayment.Amount,
+		Category:  targetPayment.Category,
+	}
+
+	s.favorites = append(s.favorites, favorite)
+
+	return favorite, nil
+}
+
