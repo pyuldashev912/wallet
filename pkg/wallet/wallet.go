@@ -120,3 +120,32 @@ func (s *Service) FindPaymentById(paymentID string) (*types.Payment, error) {
 
 	return nil, ErrPaymentNotFound
 }
+
+// Repeat повторяет платеж
+func (s *Service) Repeat(paymentID string) (*types.Payment, error) {
+	payment, err := s.FindPaymentById(paymentID)
+	if err != nil {
+		return nil, err
+	}
+
+	account, err := s.FindAccountById(payment.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	if account.Balance < payment.Amount {
+		return nil, ErrNotEnoughBalance
+	}
+
+	account.Balance -= payment.Amount
+	result := &types.Payment{
+		ID:        uuid.New().String(),
+		AccountID: payment.AccountID,
+		Amount:    payment.Amount,
+		Status:    payment.Status,
+		Category:  payment.Category,
+	}
+	s.payments = append(s.payments, result)
+
+	return result, nil
+}

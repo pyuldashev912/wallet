@@ -4,7 +4,9 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/pyuldashev912/wallet/pkg/types"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestService_FindAccountById_positive(t *testing.T) {
@@ -115,5 +117,172 @@ func TestService_Reject_negative(t *testing.T) {
 	err := s.Reject("5")
 	if !errors.Is(err, ErrPaymentNotFound) {
 		t.Errorf("Expect '%v' error, got '%v' error", ErrPaymentNotFound, err)
+	}
+}
+
+func TestService_RegisterAccount(t *testing.T) {
+	svc := Service{}
+
+	testCases := []struct {
+		name  string
+		phone types.Phone
+		valid bool
+	}{
+		{
+			name:  "Success",
+			phone: "+992000000001",
+			valid: true,
+		},
+		{
+			name:  "Fail",
+			phone: "+992000000001",
+			valid: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := svc.RegisterAccount(tc.phone)
+			if tc.valid {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, ErrPhoneRegistered.Error())
+			}
+		})
+	}
+}
+
+func TestService_Deposit(t *testing.T) {
+	svc := Service{
+		accounts: []*types.Account{
+			{
+				ID:      1,
+				Phone:   "+992000000001",
+				Balance: 125478,
+			},
+		},
+	}
+
+	testCases := []struct {
+		name   string
+		amount types.Money
+		valid  bool
+	}{
+		{
+			name:   "Success",
+			amount: 1254,
+			valid:  true,
+		},
+		{
+			name:   "Fail",
+			amount: -25,
+			valid:  false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := svc.Deposit(1, tc.amount)
+			if tc.valid {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, ErrAmountMustBePositive.Error())
+			}
+		})
+	}
+}
+
+func TestService_Pay(t *testing.T) {
+	svc := Service{
+		accounts: []*types.Account{
+			{
+				ID:      1,
+				Phone:   "+992000000001",
+				Balance: 125478,
+			},
+		},
+	}
+
+	testCases := []struct {
+		name          string
+		accoundID     int64
+		amount        types.Money
+		expectedError error
+	}{
+		{
+			name:          "Not Enough money",
+			accoundID:     1,
+			amount:        222222225,
+			expectedError: ErrNotEnoughBalance,
+		},
+		{
+			name:          "Account not found",
+			accoundID:     2,
+			amount:        2225,
+			expectedError: ErrAccountNotFound,
+		},
+		{
+			name:          "Negative amount",
+			accoundID:     1,
+			amount:        -2514,
+			expectedError: ErrAmountMustBePositive,
+		},
+		{
+			name:          "Success",
+			accoundID:     1,
+			amount:        2514,
+			expectedError: nil,
+		},
+	}
+	for i, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := svc.Pay(tc.accoundID, tc.amount, "")
+			if i == len(testCases)-1 {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, tc.expectedError.Error())
+			}
+		})
+	}
+}
+
+func TestService_Repeat(t *testing.T) {
+	svc := Service{
+		accounts: []*types.Account{
+			{
+				ID:      1,
+				Phone:   "+992000000001",
+				Balance: 125478,
+			},
+		},
+		payments: []*types.Payment{
+			{
+				ID:        uuid.New().String(),
+				AccountID: 1,
+				Amount:    2254,
+				Category:  "Home",
+				Status:    types.StatusInProgress,
+			},
+		},
+	}
+
+	testCases := []struct {
+		name           string
+		amount         types.Money
+		paymentsLenght int
+	}{
+		{
+			name:           "Succes",
+			paymentsLenght: 2,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			svc.Repeat(svc.payments[0].ID)
+			if tc.paymentsLenght != len(svc.payments) {
+				t.Fail()
+			}
+		})
 	}
 }
