@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestService_FindAccountById_positive(t *testing.T) {
+func TestService_FindAccountByID_positive(t *testing.T) {
 	s := Service{
 		accounts: []*types.Account{
 			{ID: 1, Phone: "+992927777777", Balance: 1549},
@@ -19,7 +19,7 @@ func TestService_FindAccountById_positive(t *testing.T) {
 		},
 	}
 
-	result, _ := s.FindAccountById(2)
+	result, _ := s.FindAccountByID(2)
 	expect := s.accounts[1].Phone
 
 	if result.Phone != expect {
@@ -27,7 +27,7 @@ func TestService_FindAccountById_positive(t *testing.T) {
 	}
 }
 
-func TestService_FindAccountById_negative(t *testing.T) {
+func TestService_FindAccountByID_negative(t *testing.T) {
 	s := Service{
 		accounts: []*types.Account{
 			{ID: 1, Phone: "+992927777777", Balance: 1549},
@@ -37,14 +37,14 @@ func TestService_FindAccountById_negative(t *testing.T) {
 		},
 	}
 
-	_, err := s.FindAccountById(5)
+	_, err := s.FindAccountByID(5)
 
 	if !errors.Is(err, ErrAccountNotFound) {
 		t.Errorf("Expect '%v' error, got '%v' error", ErrAccountNotFound, err)
 	}
 }
 
-func TestService_FindPaymentById_positive(t *testing.T) {
+func TestService_FindPaymentByID_positive(t *testing.T) {
 	s := Service{
 		payments: []*types.Payment{
 			{ID: "1", AccountID: 1, Amount: 47575, Category: "Home", Status: types.StatusInProgress},
@@ -54,13 +54,13 @@ func TestService_FindPaymentById_positive(t *testing.T) {
 	}
 
 	expectedID := "2"
-	got, _ := s.FindPaymentById(expectedID)
+	got, _ := s.FindPaymentByID(expectedID)
 	if got.ID != expectedID {
 		t.Errorf("Expect %s, got %s", expectedID, got.ID)
 	}
 }
 
-func TestService_FindPaymentById_negative(t *testing.T) {
+func TestService_FindPaymentByID_negative(t *testing.T) {
 	s := Service{
 		payments: []*types.Payment{
 			{ID: "1", AccountID: 1, Amount: 47575, Category: "Home", Status: types.StatusInProgress},
@@ -69,7 +69,7 @@ func TestService_FindPaymentById_negative(t *testing.T) {
 		},
 	}
 
-	_, err := s.FindPaymentById("5")
+	_, err := s.FindPaymentByID("5")
 	if !errors.Is(err, ErrPaymentNotFound) {
 		t.Errorf("Expect '%v' error, got '%v' error", ErrPaymentNotFound, err)
 	}
@@ -303,13 +303,13 @@ func TestService_FavoritePayment(t *testing.T) {
 
 	testCases := []struct {
 		name           string
-		paymentId      string
+		paymentID      string
 		paymentName    string
 		favoriteLength int
 	}{
 		{
 			name:           "success",
-			paymentId:      "1",
+			paymentID:      "1",
 			paymentName:    "For Home",
 			favoriteLength: 1,
 		},
@@ -317,7 +317,7 @@ func TestService_FavoritePayment(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			s.FavoritePayment(tc.paymentId, tc.paymentName)
+			s.FavoritePayment(tc.paymentID, tc.paymentName)
 			if len(s.favorites) != tc.favoriteLength {
 				t.Fail()
 			}

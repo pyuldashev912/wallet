@@ -48,7 +48,7 @@ func (s *Service) Deposit(accountID int64, amount types.Money) error {
 		return ErrAmountMustBePositive
 	}
 
-	account, err := s.FindAccountById(accountID)
+	account, err := s.FindAccountByID(accountID)
 	if err != nil {
 		return ErrAccountNotFound
 	}
@@ -63,7 +63,7 @@ func (s *Service) Pay(accountID int64, amount types.Money, category types.Paymen
 		return nil, ErrAmountMustBePositive
 	}
 
-	account, err := s.FindAccountById(accountID)
+	account, err := s.FindAccountByID(accountID)
 	if err != nil {
 		return nil, ErrAccountNotFound
 	}
@@ -85,10 +85,10 @@ func (s *Service) Pay(accountID int64, amount types.Money, category types.Paymen
 	return payment, nil
 }
 
-// FindAccountById возвращает указатель на найденный аккаунт
-func (s *Service) FindAccountById(accountId int64) (*types.Account, error) {
+// FindAccountByID возвращает указатель на найденный аккаунт
+func (s *Service) FindAccountByID(accountID int64) (*types.Account, error) {
 	for _, acc := range s.accounts {
-		if accountId == acc.ID {
+		if accountID == acc.ID {
 			return acc, nil
 		}
 	}
@@ -98,7 +98,7 @@ func (s *Service) FindAccountById(accountId int64) (*types.Account, error) {
 
 // Reject отменяет платеж
 func (s *Service) Reject(paymentID string) error {
-	payment, err := s.FindPaymentById(paymentID)
+	payment, err := s.FindPaymentByID(paymentID)
 	if err != nil {
 		return err
 	}
@@ -106,14 +106,14 @@ func (s *Service) Reject(paymentID string) error {
 	payment.Status = types.StatusFail
 	// Пропускаем проверку на ошибку, так как платеж не может быть совершен
 	// с несуществующего аккаунта
-	account, _ := s.FindAccountById(payment.AccountID)
+	account, _ := s.FindAccountByID(payment.AccountID)
 	account.Balance += payment.Amount
 
 	return nil
 }
 
-// FindPaymentById возвращает указанный платеж
-func (s *Service) FindPaymentById(paymentID string) (*types.Payment, error) {
+// FindPaymentByID возвращает указанный платеж
+func (s *Service) FindPaymentByID(paymentID string) (*types.Payment, error) {
 	for _, currPayment := range s.payments {
 		if currPayment.ID == paymentID {
 			return currPayment, nil
@@ -125,12 +125,12 @@ func (s *Service) FindPaymentById(paymentID string) (*types.Payment, error) {
 
 // Repeat повторяет платеж
 func (s *Service) Repeat(paymentID string) (*types.Payment, error) {
-	payment, err := s.FindPaymentById(paymentID)
+	payment, err := s.FindPaymentByID(paymentID)
 	if err != nil {
 		return nil, err
 	}
 
-	account, err := s.FindAccountById(payment.AccountID)
+	account, err := s.FindAccountByID(payment.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -154,14 +154,14 @@ func (s *Service) Repeat(paymentID string) (*types.Payment, error) {
 
 // FavoritePayment создает избранный платеж из ранее сделанного платежа
 func (s *Service) FavoritePayment(paymentID string, name string) (*types.Favorite, error) {
-	targetPayment, err := s.FindPaymentById(paymentID)
+	targetPayment, err := s.FindPaymentByID(paymentID)
 	if err != nil {
 		return nil, err
 	}
 
 	favorite := &types.Favorite{
 		ID:        uuid.New().String(),
-		AccountId: targetPayment.AccountID,
+		AccountID: targetPayment.AccountID,
 		Name:      name,
 		Amount:    targetPayment.Amount,
 		Category:  targetPayment.Category,
@@ -190,7 +190,7 @@ func (s *Service) PayFromFavorite(favoriteID string) (*types.Payment, error) {
 	}
 
 	payment, err := s.Pay(
-		favPayment.AccountId, favPayment.Amount, favPayment.Category,
+		favPayment.AccountID, favPayment.Amount, favPayment.Category,
 	)
 	if err != nil {
 		return nil, err

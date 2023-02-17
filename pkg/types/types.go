@@ -38,7 +38,7 @@ type Account struct {
 // Favorite представляет избранный платеж
 type Favorite struct {
 	ID        string
-	AccountId int64
+	AccountID int64
 	Name      string
 	Amount    Money
 	Category  PaymentCategory
