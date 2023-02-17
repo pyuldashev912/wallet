@@ -2,9 +2,16 @@ package wallet
 
 import (
 	"errors"
+	"fmt"
+	"os"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/pyuldashev912/wallet/pkg/types"
+)
+
+const (
+	sep string = "/"
 )
 
 var (
@@ -197,4 +204,39 @@ func (s *Service) PayFromFavorite(favoriteID string) (*types.Payment, error) {
 	}
 
 	return payment, nil
+}
+
+func (s *Service) ExportToFile(path string) error {
+	file, err := prepareFoldersAndFile(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	for _, account := range s.accounts {
+		res := fmt.Sprintf("%d;%s;%d\n", account.ID, account.Phone, account.Balance)
+		_, err := file.Write([]byte(res))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func prepareFoldersAndFile(path string) (*os.File, error) {
+	pathSlice := strings.Split(path, sep)
+	if len(pathSlice) > 1 {
+		folders := strings.Join(pathSlice[:len(pathSlice)-1], sep)
+		if err := os.MkdirAll(folders, os.ModePerm); err != nil {
+			return nil, err
+		}
+	}
+
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0664)
+	if err != nil {
+		return nil, err
+	}
+
+	return file, nil
 }
