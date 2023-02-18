@@ -1,10 +1,19 @@
 package wallet
 
 import (
+	"bufio"
 	"errors"
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/pyuldashev912/wallet/pkg/types"
+)
+
+const (
+	sep string = "/"
 )
 
 var (
@@ -182,7 +191,7 @@ func (s *Service) findPaymentFavorite(favoriteID string) (*types.Favorite, error
 	return nil, ErrFavoriteNotFound
 }
 
-// PayFromFavorite
+// PayFromFavorite проводит оплату из избранных
 func (s *Service) PayFromFavorite(favoriteID string) (*types.Payment, error) {
 	favPayment, err := s.findPaymentFavorite(favoriteID)
 	if err != nil {
@@ -197,4 +206,71 @@ func (s *Service) PayFromFavorite(favoriteID string) (*types.Payment, error) {
 	}
 
 	return payment, nil
+}
+
+// ExportToFile экспортирует аккаунты из слайса в файл
+func (s *Service) ExportToFile(path string) error {
+	file, err := prepareFoldersAndFile(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	for _, account := range s.accounts {
+		res := fmt.Sprintf("%d;%s;%d\n", account.ID, account.Phone, account.Balance)
+		_, err := file.Write([]byte(res))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func prepareFoldersAndFile(path string) (*os.File, error) {
+	pathSlice := strings.Split(path, sep)
+	if len(pathSlice) > 1 {
+		folders := strings.Join(pathSlice[:len(pathSlice)-1], sep)
+		if err := os.MkdirAll(folders, os.ModePerm); err != nil {
+			return nil, err
+		}
+	}
+
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0664)
+	if err != nil {
+		return nil, err
+	}
+
+	return file, nil
+}
+
+// ImportFromFile импортирует аккаунты из файла
+func (s *Service) ImportFromFile(path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		accountSlice := strings.Split(scanner.Text(), ";")
+
+		accountID, err := strconv.ParseInt(accountSlice[0], 10, 64)
+		if err != nil {
+			return err
+		}
+		accountBalance, err := strconv.ParseInt(accountSlice[2], 10, 64)
+		if err != nil {
+			return err
+		}
+
+		account := &types.Account{
+			ID:      accountID,
+			Phone:   types.Phone(accountSlice[1]),
+			Balance: types.Money(accountBalance),
+		}
+		s.accounts = append(s.accounts, account)
+	}
+
+	return nil
 }
