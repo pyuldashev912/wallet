@@ -1,9 +1,11 @@
 package wallet
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -189,7 +191,7 @@ func (s *Service) findPaymentFavorite(favoriteID string) (*types.Favorite, error
 	return nil, ErrFavoriteNotFound
 }
 
-// PayFromFavorite
+// PayFromFavorite проводит оплату из избранных
 func (s *Service) PayFromFavorite(favoriteID string) (*types.Payment, error) {
 	favPayment, err := s.findPaymentFavorite(favoriteID)
 	if err != nil {
@@ -206,6 +208,7 @@ func (s *Service) PayFromFavorite(favoriteID string) (*types.Payment, error) {
 	return payment, nil
 }
 
+// ExportToFile экспортирует аккаунты из слайса в файл
 func (s *Service) ExportToFile(path string) error {
 	file, err := prepareFoldersAndFile(path)
 	if err != nil {
@@ -239,4 +242,35 @@ func prepareFoldersAndFile(path string) (*os.File, error) {
 	}
 
 	return file, nil
+}
+
+// ImportFromFile импортирует аккаунты из файла
+func (s *Service) ImportFromFile(path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		accountSlice := strings.Split(scanner.Text(), ";")
+
+		accountID, err := strconv.ParseInt(accountSlice[0], 10, 64)
+		if err != nil {
+			return err
+		}
+		accountBalance, err := strconv.ParseInt(accountSlice[2], 10, 64)
+		if err != nil {
+			return err
+		}
+
+		account := &types.Account{
+			ID:      accountID,
+			Phone:   types.Phone(accountSlice[1]),
+			Balance: types.Money(accountBalance),
+		}
+		s.accounts = append(s.accounts, account)
+	}
+
+	return nil
 }
